@@ -26,10 +26,4 @@ tickets_quantiles = JOIN tickets_by_address_date BY camera_address, quantiles_by
 -- Eliminate all but those dates where the ticket count is greater than the 99th percentile
 outliers = FILTER tickets_quantiles BY (ticket_count > ninetyfifth_quantile.($0));
 
-results = FOREACH outliers GENERATE
-	tickets_by_address_date.(camera_address), 
-    tickets_by_address_date.(issue_date), 
-    quantiles_by_address.(average), 
-    quantiles_by_address.(ticket_count); 
-
-DUMP results;
+DUMP outliers;
