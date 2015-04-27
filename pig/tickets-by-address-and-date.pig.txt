@@ -1,0 +1,9 @@
+tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hcatalog.pig.HCatLoader();
+
+datestamped_tickets = FOREACH tickets GENERATE 
+	camera_address as camera_address, SUBSTRING(timestamp, 0, 10) as issue_date, ticket_id as ticket_id;
+
+results = FOREACH (GROUP datestamped_tickets BY (camera_address, issue_date)) GENERATE 
+	group as camera_address_date, COUNT(datestamped_tickets.(ticket_id)) as ticket_count;
+  
+DUMP results;

@@ -1,0 +1,18 @@
+-- Import the DataFu JAR
+REGISTER datafu-1.2.0.jar
+
+-- Alias 'CountEach' as the fully-qualified name (like Java import...)
+DEFINE CountEach datafu.pig.bags.CountEach();
+
+-- Load the hearing results data
+hearings = LOAD 'default.admin_hearing_results_2008' USING org.apache.hive.hcatalog.pig.HCatLoader();
+tickets = LOAD 'default.all_rlc_tickets_2008' USING org.apache.hive.hcatalog.pig.HCatLoader();
+
+-- Join the tables on ticket_ids
+joined = JOIN tickets BY ticket_id, hearings BY ticket_id; 
+
+results = FOREACH (GROUP joined BY camera_address) GENERATE
+  group as camera_address,
+  CountEach(joined.(result)) as results;
+
+DUMP results;
