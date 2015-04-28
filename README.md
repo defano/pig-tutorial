@@ -102,7 +102,7 @@ The algorithm we'll follow for doing so is:
 * For each group, count the number of tickets issued
 * Output a list (*bag*) of tuples consisting of `(camera address, ticket count)`
 
-_**A note to the pedantic:** Clearly, each intersection has multiple cameras installed to capture traffic moving in multiple directions. In the context of this lab the term "camera" will refer logically to all the physical cameras installed at a given intersection._
+_**A note to the pedantic:** Clearly, each intersection has multiple cameras installed to capture traffic moving in different directions. In the context of this lab the term "camera" will refer logically to all the physical cameras installed at a given intersection._
 
 1. Start by giving our script a name by entering something like `CountTickets` into the `Title` field.
 2. In the Pig script editor, enter the following statement to tell Pig to load the `all_rlc_tickets_2012` dataset into a variable (*alias*) called `tickets`. You may also find it helpful to use the "Pig Helper" drop-down menu to automatically populate the right-hand of this expression. It can be found under the "HCatalog" submenu.
@@ -138,19 +138,26 @@ _**A note to the pedantic:** Clearly, each intersection has multiple cameras ins
         ordered_results = ORDER results BY revenue DESC;
         DUMP ordered_results;
 
-7. Check, double-check and triple-check your script for errors and typos. (Having to wait several minutes to figure out you forgot a comma is painful!). When you're sure everything looks good, click "Execute".
+#### Execute your first Pig script
 
-Provided your script executed successfully, your output should look like:
+First and foremost: Check, double-check, and triple-check your script for errors and typos. It can take Pig a few minutes to catch obvious syntax errors--having to wait several minutes to figure out you forgot a comma is painful! Worse yet, semantic errors (like referencing a non-existant field in a relation) won't be caught until the statement executes at runtime. With sizeable datasets this could be hours from now! When programming Pig, it's well worth the time investment to review your code before you run it. 
 
-```
-(4200 S CICERO AVENUE,19800,1980000)
-(400 W BELMONT AVE,15076,1507600)
-(30 W 87TH STREET,12376,1237600)
-(400 S WESTERN AVENUE,12081,1208100)
-...
-```
+When you're sure your script looks good:
+
+1. Click "Execute" to submit the job.
+2. As the job runs, note the presence of the blue progress bar that appears directly below the script editor field.
+  - For a more detailed view of whats going on, open the "Job Browser" (the construction hard-hat icon) in a new tab. You'll note that by executing your script, a "TempletonControllerJob" has started on the platform. This controller job manages your script execution and is responsible for starting the child map-reduce jobs resulting from operations specified in your script.
+  - If you close the script editor window or wish to see results from previously executed jobs, click the "Query History" link at the top of the Pig page. 
+3. Your script will probably take 2-5 minutes to execute, depending on your machine. Provided your script executed successfully, the output (which will appear below the script editor field) should be:
+
+        (4200 S CICERO AVENUE,19800,1980000)
+        (400 W BELMONT AVE,15076,1507600)
+        (30 W 87TH STREET,12376,1237600)
+        (400 S WESTERN AVENUE,12081,1208100)
+        ...
 
 It should be obvious that the first element in the tuple is the camera address (i.e., `4200 S CICERO AVENUE`); the second element is the number of tickets issued (`19800`) and the third element is the total revenue collected by the city (assuming a $100 fine with no tickets overturned in court). 
 
+#### Find cameras and dates that issued an abnormally large number of tickets
 #### Count the appeal results by camera
 #### Find cameras and dates that produced abnormal appeal success
