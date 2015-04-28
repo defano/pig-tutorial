@@ -1,0 +1,40 @@
+-- Import the DataFu JAR
+REGISTER datafu-1.2.0.jar
+
+-- Alias 'CountEach' as the fully-qualified name (like Java import...)
+DEFINE CountEach datafu.pig.bags.CountEach();
+
+-- Load the hearing results data
+hearings = LOAD 'default.admin_hearing_results_2012' USING org.apache.hive.hcatalog.pig.HCatLoader();
+tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hive.hcatalog.pig.HCatLoader();
+
+describe hearings;
+describe tickets;
+
+-- Join the tables on ticket_ids
+joined = JOIN tickets BY ticket_id, hearings BY ticket_id; 
+
+describe joined;
+
+liable = FILTER joined BY camera_address == '6200 N LINCOLN AVENUE' AND result == 'Liable';
+not_liable = FILTER joined BY camera_address == '6200 N LINCOLN AVENUE' AND result == 'Not Liable';
+
+liable = FOREACH (GROUP liable BY issue_date) GENERATE 
+	group as issue_date,
+    COUNT(liable) as liable_cnt;
+        
+not_liable = FOREACH (GROUP not_liable BY issue_date) GENERATE
+	group as issue_date,
+    COUNT(not_liable) as not_liable_cnt;
+    
+joined = JOIN liable BY issue_date, not_liable BY issue_date;
+
+dump joined;
+
+results = FOREACH joined GENERATE
+	liable.(issue_date),
+    liable_cnt,
+    not_liable_cnt,
+    (not_liable_cnt / (liable_cnt + not_liable_cnt)) * 100;
+    
+dump results;
