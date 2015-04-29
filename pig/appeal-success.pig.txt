@@ -2,28 +2,28 @@ hearings = LOAD 'default.admin_hearing_results_2012' USING org.apache.hive.hcata
 -- hearings: {ticket_id: long,issue_date: chararray,hearing_date: chararray,result: chararray}
 
 tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hive.hcatalog.pig.HCatLoader();
--- tickets: {ticket_id: long,timestamp: chararray,license_plate_number: chararray,license_plate_type: chararray,license_plate_state: chararray,camera_address: chararray}
+-- tickets: {ticket_id: long,date: chararray,license_plate_number: chararray,license_plate_type: chararray,license_plate_state: chararray,camera_address: chararray}
 
 joined = JOIN tickets BY ticket_id, hearings BY ticket_id; 
--- joined: {tickets::ticket_id: long,tickets::timestamp: chararray,tickets::license_plate_number: chararray,tickets::license_plate_type: chararray,tickets::license_plate_state: chararray,tickets::camera_address: chararray,hearings::ticket_id: long,hearings::issue_date: chararray,hearings::hearing_date: chararray,hearings::result: chararray}
+-- joined: {tickets::ticket_id: long,tickets::date: chararray,tickets::license_plate_number: chararray,tickets::license_plate_type: chararray,tickets::license_plate_state: chararray,tickets::camera_address: chararray,hearings::ticket_id: long,hearings::issue_date: chararray,hearings::hearing_date: chararray,hearings::result: chararray}
 
 liable = FILTER joined BY camera_address == '6200 N LINCOLN AVENUE' AND result == 'Liable';
--- liable: {tickets::ticket_id: long,tickets::timestamp: chararray,tickets::license_plate_number: chararray,tickets::license_plate_type: chararray,tickets::license_plate_state: chararray,tickets::camera_address: chararray,hearings::ticket_id: long,hearings::issue_date: chararray,hearings::hearing_date: chararray,hearings::result: chararray}
+-- liable: {tickets::ticket_id: long,tickets::date: chararray,tickets::license_plate_number: chararray,tickets::license_plate_type: chararray,tickets::license_plate_state: chararray,tickets::camera_address: chararray,hearings::ticket_id: long,hearings::issue_date: chararray,hearings::hearing_date: chararray,hearings::result: chararray}
 
 not_liable = FILTER joined BY camera_address == '6200 N LINCOLN AVENUE' AND result == 'Not Liable';
--- not_liable: {tickets::ticket_id: long,tickets::timestamp: chararray,tickets::license_plate_number: chararray,tickets::license_plate_type: chararray,tickets::license_plate_state: chararray,tickets::camera_address: chararray,hearings::ticket_id: long,hearings::issue_date: chararray,hearings::hearing_date: chararray,hearings::result: chararray}
+-- not_liable: {tickets::ticket_id: long,tickets::date: chararray,tickets::license_plate_number: chararray,tickets::license_plate_type: chararray,tickets::license_plate_state: chararray,tickets::camera_address: chararray,hearings::ticket_id: long,hearings::issue_date: chararray,hearings::hearing_date: chararray,hearings::result: chararray}
 
-liable = FOREACH (GROUP liable BY issue_date) GENERATE
+liable = FOREACH (GROUP liable BY date) GENERATE
 group as liable_issue_date,
 COUNT(liable) as liable_cnt;
 -- liable: {issue_date: chararray,liable_cnt: long}
 
-not_liable = FOREACH (GROUP not_liable BY issue_date) GENERATE
+not_liable = FOREACH (GROUP not_liable BY date) GENERATE
 group as not_liable_issue_date,
 COUNT(not_liable) as not_liable_cnt;
 -- not_liable: {issue_date: chararray,not_liable_cnt: long}
 
-joined = JOIN liable BY liable_issue_date, not_liable BY not_liable_issue_date;
+joined = JOIN liable BY liable_issue_date FULL OUTER, not_liable BY not_liable_issue_date;
 
 results = FOREACH joined GENERATE
 	liable_issue_date,
@@ -32,7 +32,4 @@ results = FOREACH joined GENERATE
     ((double)not_liable_cnt / (double)(liable_cnt + not_liable_cnt)) as appeal_success_rate;
 -- results: {liable::liable_issue_date: chararray,liable::liable_cnt: long,not_liable::not_liable_cnt: long,appeal_success_rate: double}
 
-ordered = ORDER results BY appeal_success_rate DESC;
--- ordered: {liable::liable_issue_date: chararray,liable::liable_cnt: long,not_liable::not_liable_cnt: long,appeal_success_rate: double}
-
-dump ordered;
+dump results;

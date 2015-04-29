@@ -3,27 +3,22 @@ define Quantile datafu.pig.stats.StreamingQuantile('0.99');
 
 tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hcatalog.pig.HCatLoader();
 
-datestamped_tickets = FOREACH tickets GENERATE 
-	camera_address as camera_address, 
-    SUBSTRING(timestamp, 0, 10) as issue_date, 
-    ticket_id as ticket_id;
-
 -- Count the number of tickets issued per camera, per day
-tickets_by_address_date = FOREACH (GROUP datestamped_tickets BY (camera_address, issue_date)) GENERATE 
+tickets_by_address_date = FOREACH (GROUP tickets BY (camera_address, date)) GENERATE 
 	group.camera_address as camera_address, 
-    group.issue_date as issue_date, 
-    COUNT(datestamped_tickets.(ticket_id)) as ticket_count;    
+    group.date as date, 
+    COUNT(tickets) as ticket_count;    
     
 -- Determine the 99th percentile for ticket issuance per camera (not by date!)
 quantiles_by_address = FOREACH (GROUP tickets_by_address_date BY (camera_address)) GENERATE
 	group as camera_address, 
-    Quantile(tickets_by_address_date.(ticket_count)) as ninetyfifth_quantile,
+    Quantile(tickets_by_address_date.(ticket_count)) as quantile_99,
     AVG(tickets_by_address_date.(ticket_count)) as average;
 
 -- Join the quantile and ticket count tables
 tickets_quantiles = JOIN tickets_by_address_date BY camera_address, quantiles_by_address BY camera_address;
 
 -- Eliminate all but those dates where the ticket count is greater than the 99th percentile
-outliers = FILTER tickets_quantiles BY (ticket_count > ninetyfifth_quantile.($0));
+outliers = FILTER tickets_quantiles BY (ticket_count > quantile_99.($0));
 
 DUMP outliers;

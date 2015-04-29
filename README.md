@@ -48,12 +48,13 @@ Recall that Pig deals with data in the form of _relations_, _bags_, _tuples_ and
 * A **bag** is an unordered collection of tuples notated with braces, like `{(a, b), (1, 2)}`. Analogus to a table in a database.
 * A **relation** is an outer bag. Given that bags can contain other bags (tuples can also contain other tuples) we call the outer-most bag the relation. Analogus to a database. 
 
-Each collection type--bags and tuples--has a schema assocaited with it. A schema associates a type and alias ("name") with each element. Consider the example:
+Each collection type--bags and tuples--has a schema assocaited with it. A schema associates a type and alias ("name") with each element. Consider this example schema:
 
 ```
 results: {dates:tuple(start_year:int,end_year:int),ages:tuple(name:chararray,age:int)}
 ```
 
+From left to right:
 * `results` is the alias (the name) of the relation
 * `dates:tuple(...)` indicates that the relation contains a tuple called `dates`
 * `(start_year:int, end_year:int)` denotes that the `dates` tuple contains two integers, called `start_year` and `end_year` respectively. 
