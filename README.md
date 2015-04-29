@@ -113,10 +113,6 @@ Analyzing the Data
 
 In this tutorial, we'll be using Apache Pig to crunch our data. Pig is a scripting language that enables data scientists to analyze datasets using a reasonably simple scripting language (called, no less, *Pig Latin*) without regard to the reasonably complex, underlying map-reduce architecture. Pig compiles Pig Latin scripts into one or more map-reduce jobs that execute in the Hadoop environment. Think of map-reduce as Big Data's assembly language and Pig Latin as Big Data's C.
 
-#### Start the Pig editor in Hue
-
-1. Start by clicking the "Pig" icon in the button bar at the top of the page. 
-
 #### Figure out which cameras generate the most revenue
 
 We'll start with a fairly simple task: For each camera (identified by its address), count the number of tickets issued by that camera in 2012. 
@@ -130,12 +126,13 @@ The algorithm we'll follow for doing so is:
 
 _**A note to the pedantic:** Clearly, each intersection has multiple cameras installed to capture traffic moving in different directions. In the context of this lab the term "camera" will refer logically to all the physical cameras installed at a given intersection._
 
-1. Start by giving our script a name by entering something like `CountTickets` into the `Title` field.
-2. In the Pig script editor, enter the following statement to tell Pig to load the `all_rlc_tickets_2012` dataset into a variable (*alias*) called `tickets`. You may also find it helpful to use the "Pig Helper" drop-down menu to automatically populate the right-hand of this expression. It can be found under the "HCatalog" submenu.
+1. Start by clicking the "Pig" icon in the button bar at the top of the page. 
+2. Give our script a name by entering something like `CountTickets` into the `Title` field.
+3. In the script editor field, enter the following statement to tell Pig to load the `all_rlc_tickets_2012` dataset into a relation called `tickets` (its *alias*). You may also find it helpful to use the "Pig Helper" drop-down menu to automatically populate the right-hand side of this expression (look under the "HCatalog" submenu).
 
         tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hcatalog.pig.HCatLoader();
 
-3. Next, we want to group tuples by `camera_address`, then, for each group, output a tuple containing the camera address, the number of tickets issued, and the number of tickets issued multiplied by the fine for each ticket ($100).
+4. Next, we want to group tuples by `camera_address`, then, for each group, output a tuple containing the camera address, the number of tickets issued, and the number of tickets issued multiplied by the fine for each ticket ($100).
 
         results = FOREACH (GROUP tickets BY camera_address) GENERATE 
 	        group as camera_address, 
@@ -146,15 +143,15 @@ _**A note to the pedantic:** Clearly, each intersection has multiple cameras ins
  * For completeness and illustration, we're assigning field names (i.e., `as camera_address`, `as ticket_count`, `as revenue`) to the data we're generating in the resulting relation. Since we don't need to refer to these fields in the future, this is isn't necessary; the `as...` clauses could be removed without harm. 
  * The `COUNT` operator returns the number of non-null elements in the specified field. The intent here is to report the number of rows/elements in the group. 
  
-4. Now, lets order the `results` tuple by `revenue` so that we can quickly identify those cameras producing the greatest revenue:
+5. Now, lets order the `results` tuple by `revenue` so that we can quickly identify those cameras producing the greatest revenue:
 
         ordered_results = ORDER results BY revenue DESC;
         
-5. Finally, dump the `ordered_results` to output:
+6. Finally, dump the `ordered_results` to output:
 
         DUMP ordered_results;
 
-6.   Your final Pig script should look like...
+7.   Your final Pig script should look like...
 
         tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hcatalog.pig.HCatLoader();
         results = FOREACH (GROUP tickets BY camera_address) GENERATE 
@@ -184,6 +181,49 @@ When you're sure your script looks good:
 
 It should be obvious that the first element in the tuple is the camera address (i.e., `4200 S CICERO AVENUE`); the second element is the number of tickets issued (`19800`) and the third element is the total revenue collected by the city (assuming a $100 fine with no tickets overturned in court). 
 
+Congratulations on your first Pig Latin script!
+
 #### Find cameras and dates that issued an abnormally large number of tickets
+
+Next, lets see if we can identify dates on which camera's issued an abnormally large number of tickets. For the purposes of this exercise, we're going to define _abnormally large_ as any date on which the number of tickets issued by a camera are in the 99th percentile of tickets issued (i.e., fewer than 1% of all days produce more tickets for the given camera).
+
+Our algorithm is:
+* Count the number of tickets issued per camera, per date
+* Determine how many tickets constitute the 99th percentile for each camera
+* Join the 99th percentile data with the number of tickets per camera per day
+* Filter the result, eliminating records where the number of tickets issued is fewer than the 99th percentile. 
+
+We'll be making use of a LinkedIn-authored _user defined function_, (UDF) called "DataFu" in this exercise to simplify the calculation percentiles/quantiles. UDFs provide an extension to the Pig Latin language and can be written in Java, Python and Javascript. Authoring UDFs is relatively straightforward, although the details are beyond the scope of this lab.
+
+1. Create a new script by clicking the "+ NEW SCRIPT" link on the page. Give the new script a name like `Outliers`.
+2. Upload the DataFu UDF to the Hortonworks platform by clicking the "Upload UDF Jar" button. Locate the `datafu-1.2.0.jar` library under the `lib` directory of the USB (or on GitHub, [https://github.com/defano/ccc-big-data/blob/master/lib/datafu-1.2.0.jar](here)).
+3. In order to make use of this library inside our Pig Latin script, we need to tell Pig about it and, as a convenience, assign an alias to the function's name (so as not to have to refer to the method using its fully-qualified package name):
+        REGISTER datafu-1.2.0.jar
+        DEFINE Quantile datafu.pig.stats.StreamingQuantile('0.99');
+4. Like our last script, we only need to load the ticket data:
+        tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hcatalog.pig.HCatLoader();
+5. Finally, your script should look like:
+
+        REGISTER datafu-1.2.0.jar
+        DEFINE Quantile datafu.pig.stats.StreamingQuantile('0.99');
+
+        tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hcatalog.pig.HCatLoader();
+
+        tickets_by_address_date = FOREACH (GROUP tickets BY (camera_address, date)) GENERATE 
+        	group.camera_address AS camera_address, 
+            group.date AS date, 
+            COUNT(tickets) AS ticket_count;    
+    
+        quantiles_by_address = FOREACH (GROUP tickets_by_address_date BY (camera_address)) GENERATE
+        	group AS camera_address, 
+            Quantile(tickets_by_address_date.(ticket_count)) AS quantile_99,
+            AVG(tickets_by_address_date.(ticket_count)) AS average;
+
+        tickets_quantiles = JOIN tickets_by_address_date BY camera_address, quantiles_by_address BY camera_address;
+        outliers = FILTER tickets_quantiles BY (ticket_count > quantile_99.($0));
+
+        DUMP outliers; 
+
 #### Count the appeal results by camera
+
 #### Find cameras and dates that produced abnormal appeal success
