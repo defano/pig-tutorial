@@ -16,7 +16,7 @@ The full investigavtive series can be found here, http://www.chicagotribune.com/
 Getting Started
 ---------------
 
-We'll be using the Hortonworks Sandbox v2.2.4 as our "big data" platform during this exercise. The sandbox is freely available, installs trivially, and provides a user friendly interface (it even has its own built-in tutorial which you can use to improve your skillset outside this course). 
+We'll be using the Hortonworks Sandbox v2.1 as our "big data" platform during this exercise. The sandbox is freely available, installs trivially, and provides a user friendly interface. IUt even has its own built-in tutorial which you can use to improve your skillset outside this course. 
 
 Most host machines should have little trouble running the sandbox, but official requirements from Hortonworks state:
 
@@ -25,11 +25,11 @@ Most host machines should have little trouble running the sandbox, but official 
 * Virtualization enabled on BIOS
 * Browser: Chrome 25+, IE 9+, Safari 6+ recommended. (Sandbox will not run on IE 10)
 
-Install and run the virtual machine:
+#### Install and run the Hortonworks virtual machine:
 
 1. Locate the VirtualBox software on the provided thumb drive and install it on your Mac or PC.
 
-2. Import the Hortonworks virtual machine (OVA) into VirtualBox by double-click the `.ova` file on the thumb drive. Note that the import process may take several minutes. 
+2. Import the Hortonworks virtual machine (OVA) into VirtualBox by double-clicking the `.ova` file on the thumb drive. Note that the import process may take several minutes. 
 
 3. Once imported, click the "Start" button to run the virtual machine. 
    
@@ -38,6 +38,31 @@ Install and run the virtual machine:
 5. Complete and submit the registration page and accept the terms of use.
 
 6. The welcome page provides a link to the locally running application and displays the username and password to use for login. Navigate to [http://localhost:8000](http://localhost:8000) and, if prompted, log in with username `hue` and password `1111`.
+
+#### A quick refresher on terminology
+
+Recall that Pig deals with data in the form of _relations_, _bags_, _tuples_ and _fields_:
+
+* A **field** is a typed data element, like `City of Chicago` (a `chararray`), `2012` (an `int`), or `3.1415` (a `double`).
+* A **tuple** is an ordered set of fields notated with parentheses, like `(1, 2, 3)` or `(pi, 3.1415)`. Analogus to a row in a database.
+* A **bag** is an unordered collection of tuples notated with braces, like `{(a, b), (1, 2)}`. Analogus to a table in a database.
+* A **relation** is an outer bag. Given that bags can contain other bags (tuples can also contain other tuples) we call the outer-most bag the relation. Analogus to a database. 
+
+Each collection type--bags and tuples--has a schema assocaited with it. A schema associates a type and alias ("name") with each element. Consider the example:
+
+```
+results: {dates:tuple(start_year:int,end_year:int),ages:tuple(name:chararray,age:int)}
+```
+
+* `results` is the alias (the name) of the relation
+* `dates:tuple(...)` indicates that the relation contains a tuple called `dates`
+* `(start_year:int, end_year:int)` denotes that the `dates` tuple contains two integers, called `start_year` and `end_year` respectively. 
+* `ages:tuple(name:chararray,age:int)` indicates the relation also contains a second tuple called `ages` comprised of a string (`chararray`) called `name` and an integer called `age`.
+
+You can print the schema of any alias with the command:
+```DESCRIBE alias```
+
+Note that when you do so, you may find that some elements in your schema are preceeded with an an identifier and two colons, for example, `tickets::ticket_count:int`. This identifier (`tickets::`) indicates the element's namespace; the alias from which it originated when joining or generating derived relations. Namespaces--as we'll see in the exercises--are important when dealing with relations containing elements that otherwise have the same name.
 
 Importing the Ticket Data
 -------------------------
@@ -59,9 +84,9 @@ We'll begin by using Apache's HCatalog to import and store our data on the platf
 4. Click the "Choose a file" button adjacent to the input file field. In the modal dialog that appears, click the "Upload a file" button, then navigate to and choose the `all_rlc_tickets_2012.txt` file on your filesystem.
 5. As soon as the file has uploaded it will appear in the list of available files; click its link to select it.
 6. The page will now display additional file import options and a preview of the table that will be created. HCatalog will auto-detect most of the file structure options for us (like encoding and delimiters). Leave the default selections as they are. 
-7. In the "Table Preview" section of the page we find the HCatalog has inferred data types for each column, but we do need to provide more meaningful column names and review the types:
+7. In the "Table Preview" section of the page we find the HCatalog has inferred data types for each column, but we  need to provide more meaningful column names:
   - Change the first column name from `7000634986` to `ticket_id`
-  - Change the second column name from `2007_01_01_00_02_00` to `timestamp` and change the type to `String`
+  - Change the second column name from `2007_01_01` to `date`
   - Change the third column name from `y301669` to `license_plate_number`
   - Change the fourth column name from `pas` to `license_plate_type`
   - Change the fifth column name from `il` to `license_plate_state`
