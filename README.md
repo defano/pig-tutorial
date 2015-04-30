@@ -9,9 +9,9 @@ In this exercise, we'll be duplicating research performed by investigative repor
 
 *	Drivers that appeal red-light tickets typically win their cases 10% of the time, but tickets issued during these spikes were overturned 45% of the time. 
 
-Specifically, we'll be reproducing the data (found in this article, http://apps.chicagotribune.com/news/local/red-light-camera-tickets/) illustrating periods of abnormally high ticketing activity and identifying any correlation to periods of appeal success. 
+Specifically, we'll be reproducing the data (found [in this article](http://apps.chicagotribune.com/news/local/red-light-camera-tickets/)) illustrating periods of abnormally high ticketing activity and identifying any correlation to periods of appeal success. 
 
-The full investigavtive series can be found here, http://www.chicagotribune.com/news/watchdog/redlight/. 
+The full investigavtive series [can be found here](http://www.chicagotribune.com/news/watchdog/redlight/). 
 
 Getting Started
 ---------------
@@ -27,17 +27,13 @@ Most host machines should have little trouble running the sandbox, but official 
 
 #### Install and run the Hortonworks virtual machine:
 
-1. Locate the VirtualBox software on the provided thumb drive and install it on your Mac or PC.
+1. Locate the VirtualBox software on the provided thumb drive (or download it [from the VirtualBox website](https://www.virtualbox.org/wiki/Downloads)) and install it on your Mac or PC. 
 
-2. Import the Hortonworks virtual machine (OVA) into VirtualBox by double-clicking the `.ova` file on the thumb drive. Note that the import process may take several minutes. 
+2. Locate the Hortonwork Sandbox on the provided thumb drive (or download it [from the Hortonworks website](http://hortonworks.com/products/hortonworks-sandbox/#install)) and import the virtual machine (OVA) into VirtualBox by double-clicking the `.ova` file . Note that the import process may take several minutes. 
 
 3. Once imported, click the "Start" button to run the virtual machine. 
    
-4. The Hortonworks sandbox runs as a web app; the UI front-end is a Hortonworks development called "Hue". As soon as the virtual machine has booted its console will display the URL to access the application. Open a browser and navigate to that URL: http://127.0.0.1:8888
-
-5. Complete and submit the registration page and accept the terms of use.
-
-6. The welcome page provides a link to the locally running application and displays the username and password to use for login. Navigate to [http://localhost:8000](http://localhost:8000) and, if prompted, log in with username `hue` and password `1111`.
+4. The Hortonworks sandbox runs a custom web app called "Hue" that we'll be interacting with through the browser. As soon as the virtual machine has booted its console will display the URL at which access the application. Open a browser and navigate to that URL: [http://127.0.0.1:8888](http://127.0.0.1:8888), or, if you'd rather skip the registration process, jump directly to the Hue application at [http://localhost:8000](http://localhost:8000). (If prompted, log in with username `hue` and password `1111`.)
 
 #### A quick refresher on terminology
 
@@ -48,7 +44,7 @@ Recall that Pig deals with data in the form of _relations_, _bags_, _tuples_ and
 * A **bag** is an unordered collection of tuples notated with braces, like `{(a, b), (1, 2)}`. Analogus to a table in a database.
 * A **relation** is an outer bag. Given that bags can contain other bags (tuples can also contain other tuples) we call the outer-most bag the relation. Analogus to a database. 
 
-Each collection type--bags and tuples--has a schema assocaited with it. A schema associates a type and alias ("name") with each element. Consider this example schema:
+Each collection type—bags and tuples—has a schema assocaited with it. A schema associates a type and an alias (name) with each element. Consider this example schema:
 
 ```
 results: {dates:tuple(start_year:int,end_year:int),ages:tuple(name:chararray,age:int)}
@@ -60,10 +56,9 @@ From left to right:
 * `(start_year:int, end_year:int)` denotes that the `dates` tuple contains two integers, called `start_year` and `end_year` respectively. 
 * `ages:tuple(name:chararray,age:int)` indicates the relation also contains a second tuple called `ages` comprised of a string (`chararray`) called `name` and an integer called `age`.
 
-You can print the schema of any alias with the command:
-```DESCRIBE alias```
+You can print the schema of any alias inside a script with the command: `DESCRIBE alias;`
 
-Note that when you do so, you may find that some elements in your schema are preceeded with an an identifier and two colons, for example, `tickets::ticket_count:int`. This identifier (`tickets::`) indicates the element's namespace; the alias from which it originated when joining or generating derived relations. Namespaces--as we'll see in the exercises--are important when dealing with relations containing elements that otherwise have the same name.
+Note that when you do so, you may find that some elements in your schema are preceeded with an an identifier and two colons, for example, `tickets::ticket_count:int`. This identifier (`tickets::`) indicates the element's namespace which is set equal to the alias from which it originated when joining or generating derived relations. Namespaces—as we'll see in the exercises—are important when differentiating between elements that otherwise have the same alias.
 
 Importing the Ticket Data
 -------------------------
@@ -128,9 +123,11 @@ _**A note to the pedantic:** Clearly, each intersection has multiple cameras ins
 
 1. Start by clicking the "Pig" icon in the button bar at the top of the page. 
 2. Give our script a name by entering something like `CountTickets` into the `Title` field.
-3. In the script editor field, enter the following statement to tell Pig to load the `all_rlc_tickets_2012` dataset into a relation called `tickets` (its *alias*). You may also find it helpful to use the "Pig Helper" drop-down menu to automatically populate the right-hand side of this expression (look under the "HCatalog" submenu).
+3. In the script editor field, enter the following statement to tell Pig to load the `all_rlc_tickets_2012` dataset into a relation called `tickets` (its *alias*). 
 
         tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hcatalog.pig.HCatLoader();
+
+  You may also find it helpful to use the "Pig Helper" drop-down menu to automatically populate the right-hand side of this expression (look under the "HCatalog" submenu).
 
 4. Our first transformation on the `tickets` data will be to group the records (tuples) by camera address. The goal is to produce a relation (bag) in which each tuple in the bag contains two fields: the camera address aliased as `group` and each corresponding record aliased with the original relation's name (`tickets`, in our case). Enter this statement after the previous line in your script: 
 
@@ -194,13 +191,13 @@ Congratulations on your first Pig Latin script!
 
 Next, lets see if we can identify dates on which camera's issued an abnormally large number of tickets. For the purposes of this exercise, we're going to define _abnormally large_ as any date on which the number of tickets issued by a camera are in the 99th percentile of tickets issued (i.e., fewer than 1% of all days produce more tickets for the given camera).
 
-Our algorithm is:
+Here's the process we'll follow:
 * Count the number of tickets issued per camera, per date
 * Determine how many tickets constitute the 99th percentile for each camera
 * Join the 99th percentile data with the number of tickets per camera per day
 * Filter the result, eliminating records where the number of tickets issued is fewer than the 99th percentile. 
 
-We'll be making use of a LinkedIn-authored _user defined function_, (UDF) called "DataFu" in this exercise to simplify the calculation percentiles/quantiles. UDFs provide an extension to the Pig Latin language and can be written in Java, Python and Javascript. Authoring UDFs is relatively straightforward, although the details are beyond the scope of this lab.
+We'll be making use of a _user defined function_, (UDF) called "DataFu" (and created by LinkedIn) to simplify the calculation of  percentiles/quantiles. UDFs provide an extension to the Pig Latin language and can be written in Java, Python and Javascript. While authoring UDFs is relatively straightforward, the details are beyond the scope of this lab.
 
 1. Create a new script by clicking the "New Script" link on the page. Give the new script a name like `Outliers`.
 2. Upload the DataFu UDF to the Hortonworks platform by clicking the "Upload UDF Jar" button. Locate the `datafu-1.2.0.jar` library under the `lib` directory of the USB (or on GitHub, [here](https://github.com/defano/ccc-big-data/blob/master/lib/datafu-1.2.0.jar)).
@@ -208,6 +205,8 @@ We'll be making use of a LinkedIn-authored _user defined function_, (UDF) called
 
         REGISTER datafu-1.2.0.jar
         DEFINE Quantile datafu.pig.stats.StreamingQuantile('0.99');
+        
+  The `'0.99'` is a constructor argument passed to the UDF indicating that we wish to calculate only the 99th percentile. Alternately, DataFu could calculate a list of different quantiles simultaniously with an input like `('.25', '.50', '.75')`. 
         
 4. Like our last script, we only need to load the ticket data:
 
