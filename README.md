@@ -137,6 +137,7 @@ _**A note to the pedantic:** Clearly, each intersection has multiple cameras ins
         cameras = GROUP tickets BY camera_address;
 
 The result of this will be to produce a new relation with the schema cameras: `{group:chararray, tickets:{...}}`.
+
 5. For each group (i.e., for each different red light camera in Chicago), produce a bag containing the camera address, the number of tickets issued, and the number of tickets issued multiplied by the fine for each ticket ($100).
 
         results = FOREACH cameras GENERATE 
