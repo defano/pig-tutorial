@@ -212,12 +212,23 @@ We'll be making use of a _user defined function_, (UDF) called "DataFu" (and cre
 
         tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hcatalog.pig.HCatLoader();
         
-5. Our first transformation on the `tickets` data will be to group all records (tuples) by camera address and date. Each group then represents the activity of a given camera on a given date. To determine the number of tickets issued by the camera on the date we simply count number of elements in the group:
+5. Our first transformation on the `tickets` data will be to group all records (tuples) by camera address and date such that each group represents the activity of a given camera on a given date. To determine the number of tickets issued by `(camera_address, date)` date we simply count number of elements in the group:
 
         tickets_by_address_date = FOREACH (GROUP tickets BY (camera_address, date)) GENERATE 
         	group.camera_address AS camera_address, 
             group.date AS date, 
             COUNT(tickets) AS ticket_count;    
+
+6. Now that we've produced a count of tickets issued by each camera on each day of the year, we need some statistical calculations to determine how many tickets in one day would be considered the 99th percentile. We'll use the DataFu `StreamingQuantile` UDF to help with this. 
+
+        quantiles_by_address = FOREACH (GROUP tickets_by_address_date BY (camera_address)) GENERATE
+        	group AS camera_address, 
+            Quantile(tickets_by_address_date.(ticket_count)) AS quantile_99,
+            AVG(tickets_by_address_date.(ticket_count)) AS average;
+
+ A couple things to note about this:
+ * The `ticket_count` alias is overloaded in the schema.
+ * For good measure, we're also calculating the average number of tickets issued per day by the camera. 
 
 Finally, your script should look like:
 
