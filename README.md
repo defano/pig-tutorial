@@ -132,32 +132,38 @@ _**A note to the pedantic:** Clearly, each intersection has multiple cameras ins
 
         tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hcatalog.pig.HCatLoader();
 
-4. Next, we want to group tuples by `camera_address`, then, for each group, output a tuple containing the camera address, the number of tickets issued, and the number of tickets issued multiplied by the fine for each ticket ($100).
+4. Our first transformation on the `tickets` data will be to group the records (tuples) by camera address. The goal is to produce a relation (bag) in which each tuple in the bag contains two fields: the camera address aliased as `group` and each corresponding record aliased with the original relation's name (`tickets`, in our case). Enter this statement after the previous line in your script: 
 
-        results = FOREACH (GROUP tickets BY camera_address) GENERATE 
-	        group as camera_address, 
-	        COUNT(tickets.(ticket_id)) as ticket_count, 
-	        COUNT(tickets.(ticket_id)) * 100 as revenue;
+        cameras = GROUP tickets BY camera_address;
 
- * This statement will produce a `results` alias that should contain a relation with the schema `{camera_address:String, ticket_count:Integer, revenue:Integer}`
- * For completeness and illustration, we're assigning field names (i.e., `as camera_address`, `as ticket_count`, `as revenue`) to the data we're generating in the resulting relation. Since we don't need to refer to these fields in the future, this is isn't necessary; the `as...` clauses could be removed without harm. 
- * The `COUNT` operator returns the number of non-null elements in the specified field. The intent here is to report the number of rows/elements in the group. 
+The result of this will be to produce a new relation with the schema cameras: `{group:chararray, tickets:{...}}`.
+5. For each group (i.e., for each different red light camera in Chicago), produce a bag containing the camera address, the number of tickets issued, and the number of tickets issued multiplied by the fine for each ticket ($100).
+
+        results = FOREACH cameras GENERATE 
+	        group AS camera_address, 
+	        COUNT(tickets) AS ticket_count, 
+	        COUNT(tickets) * 100 AS revenue;
+
+ * This statement will produce a `results` alias that should contain a relation with the schema `{camera_address:chararray, ticket_count:int, revenue:int}`
+ * For completeness and illustration, we're assigning field names (i.e., `AS camera_address`, `AS ticket_count`, `AS revenue`) to the data we're generating in the resulting relation. Since we don't need to refer to these fields in the future, this is isn't necessary; the `as...` clauses could be removed without harm. 
+ * The `COUNT` operator returns the number of non-null elements in the specified bag. The intent here is to report the number of rows/elements in the group. 
  
-5. Now, lets order the `results` tuple by `revenue` so that we can quickly identify those cameras producing the greatest revenue:
+6. Now, lets order the `results` bag by `revenue` so that we can quickly identify those cameras producing the greatest revenue:
 
         ordered_results = ORDER results BY revenue DESC;
         
-6. Finally, dump the `ordered_results` to output:
+7. Finally, dump our `ordered_results` to output:
 
         DUMP ordered_results;
 
-7.   Your final Pig script should look like...
+8. Check your results: your finished Pig script should look like...
 
         tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hcatalog.pig.HCatLoader();
-        results = FOREACH (GROUP tickets BY camera_address) GENERATE 
+        cameras = GROUP tickets BY camera_address;
+        results = FOREACH cameras GENERATE 
             group as camera_address, 
-            COUNT(tickets.(ticket_id)) as ticket_count, 
-            COUNT(tickets.(ticket_id)) * 100 as revenue;
+            COUNT(tickets) as ticket_count, 
+            COUNT(tickets) * 100 as revenue;
         ordered_results = ORDER results BY revenue DESC;
         DUMP ordered_results;
 
@@ -195,14 +201,25 @@ Our algorithm is:
 
 We'll be making use of a LinkedIn-authored _user defined function_, (UDF) called "DataFu" in this exercise to simplify the calculation percentiles/quantiles. UDFs provide an extension to the Pig Latin language and can be written in Java, Python and Javascript. Authoring UDFs is relatively straightforward, although the details are beyond the scope of this lab.
 
-1. Create a new script by clicking the "+ NEW SCRIPT" link on the page. Give the new script a name like `Outliers`.
-2. Upload the DataFu UDF to the Hortonworks platform by clicking the "Upload UDF Jar" button. Locate the `datafu-1.2.0.jar` library under the `lib` directory of the USB (or on GitHub, [https://github.com/defano/ccc-big-data/blob/master/lib/datafu-1.2.0.jar](here)).
+1. Create a new script by clicking the "New Script" link on the page. Give the new script a name like `Outliers`.
+2. Upload the DataFu UDF to the Hortonworks platform by clicking the "Upload UDF Jar" button. Locate the `datafu-1.2.0.jar` library under the `lib` directory of the USB (or on GitHub, [here](https://github.com/defano/ccc-big-data/blob/master/lib/datafu-1.2.0.jar)).
 3. In order to make use of this library inside our Pig Latin script, we need to tell Pig about it and, as a convenience, assign an alias to the function's name (so as not to have to refer to the method using its fully-qualified package name):
+
         REGISTER datafu-1.2.0.jar
         DEFINE Quantile datafu.pig.stats.StreamingQuantile('0.99');
+        
 4. Like our last script, we only need to load the ticket data:
+
         tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hcatalog.pig.HCatLoader();
-5. Finally, your script should look like:
+        
+5. Our first transformation on the `tickets` data will be to group all records (tuples) by camera address and date. Each group then represents the activity of a given camera on a given date. To determine the number of tickets issued by the camera on the date we simply count number of elements in the group:
+
+        tickets_by_address_date = FOREACH (GROUP tickets BY (camera_address, date)) GENERATE 
+        	group.camera_address AS camera_address, 
+            group.date AS date, 
+            COUNT(tickets) AS ticket_count;    
+
+Finally, your script should look like:
 
         REGISTER datafu-1.2.0.jar
         DEFINE Quantile datafu.pig.stats.StreamingQuantile('0.99');
