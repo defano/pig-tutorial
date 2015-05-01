@@ -197,7 +197,7 @@ Here's the process we'll follow:
 * Join the 99th percentile data with the number of tickets per camera per day
 * Filter the result, eliminating records where the number of tickets issued is fewer than the 99th percentile. 
 
-We'll be making use of a _user defined function_, (UDF) called "DataFu" (and created by LinkedIn) to simplify the calculation of  percentiles/quantiles. UDFs provide an extension to the Pig Latin language and can be written in Java, Python and Javascript. While authoring UDFs is relatively straightforward, the details are beyond the scope of this lab.
+We'll be making use of a _user defined function_, (UDF) called "DataFu" (created by LinkedIn) to simplify the calculation of  percentiles/quantiles. UDFs provide an extension to the Pig Latin language and can be written in Java, Python and Javascript. While authoring UDFs is relatively straightforward, the details are beyond the scope of this lab.
 
 1. Create a new script by clicking the "New Script" link on the page. Give the new script a name like `Outliers`.
 2. Upload the DataFu UDF to the Hortonworks platform by clicking the "Upload UDF Jar" button. Locate the `datafu-1.2.0.jar` library under the `lib` directory of the USB (or on GitHub, [here](https://github.com/defano/ccc-big-data/blob/master/lib/datafu-1.2.0.jar)).
@@ -219,18 +219,31 @@ We'll be making use of a _user defined function_, (UDF) called "DataFu" (and cre
             group.date AS date, 
             COUNT(tickets) AS ticket_count;    
 
-6. Now that we've produced a count of tickets issued by each camera on each day of the year, we need some statistical calculations to determine how many tickets in one day would be considered the 99th percentile. We'll use the DataFu `StreamingQuantile` UDF to help with this. 
+6. Now that we've produced a count of tickets issued by each camera on each day of the year, we need some statistical calculations to determine how many tickets in one day would be considered the 99th percentile. We'll use the DataFu `StreamingQuantile` UDF to help with this. For good measure, we're also calculating the average number of tickets issued per day by the camera (using the built-in `AVG` function):
 
         quantiles_by_address = FOREACH (GROUP tickets_by_address_date BY (camera_address)) GENERATE
         	group AS camera_address, 
             Quantile(tickets_by_address_date.(ticket_count)) AS quantile_99,
             AVG(tickets_by_address_date.(ticket_count)) AS average;
 
- A couple things to note about this:
- * The `ticket_count` alias is overloaded in the schema.
- * For good measure, we're also calculating the average number of tickets issued per day by the camera. 
+  Note that when we group `tickets_by_address_date BY camera_address`, the resulting relation has two elements: the camera address aliased as `group` and the associated grouped rows (tuples) in a bag aliased with the name of the originating relation, `tickets_by_address_date`. This is why can't simply refer to `ticket_count`, we have to reach inside the bag that contains it using the `tickets_by_address_date.ticket_count` syntax.
 
-Finally, your script should look like:
+7. At this point, we have two tables: 
+  - `tickets_by_address_date` with the schema `{camera_adddress:chararray, date:chararray, ticket_count:int}`, and
+  - `quantiles_by_address` with the schema `{camera_address:chararray, quantile_99:double, average:double}`
+  
+  Lets perform an inner-join on these tables by `camera_address` to produce `{camera_adddress:chararray, date:chararray, ticket_count:int, camera_address:chararray, quantile_99:double, average:double}` using the `JOIN` statement:
+  
+        tickets_quantiles = JOIN tickets_by_address_date BY camera_address, quantiles_by_address BY camera_address;
+
+8. Reduce the result set to only those records where the number of tickets issued by a camera on a given date exceeds that camera's 99th percentile and dump the results:
+
+        outliers = FILTER tickets_quantiles BY (ticket_count > quantile_99.($0));
+        DUMP outliers;
+        
+  _What's with the `$0` nonsense?_ The output of our `Quantile` method is a tuple of quantiles rather than a scalar (this is so that it can simultaniously calculate multiple quantiles at once). If we simply performed our comparison as `(ticket_count > quantile_99)` Pig would complain that it cannot compare an `int` to a touple. The `$0` notation references the first field (and in this case the only field) in the touple; a scalar `int` value.
+
+9. Quadruple-check your results. Your completed script should read...
 
         REGISTER datafu-1.2.0.jar
         DEFINE Quantile datafu.pig.stats.StreamingQuantile('0.99');
@@ -251,6 +264,16 @@ Finally, your script should look like:
         outliers = FILTER tickets_quantiles BY (ticket_count > quantile_99.($0));
 
         DUMP outliers; 
+
+10. Executing the script should produce output similar to:
+
+        (1 E 63RD ST,2012-04-27,11,1 E 63RD ST,(10.0),4.145985401459854)
+        (4400 W NORTH,2012-06-16,10,4400 W NORTH,(9.0),3.52463768115942)
+        (4400 W NORTH,2012-09-29,11,4400 W NORTH,(9.0),3.52463768115942)
+        (4400 W NORTH,2012-09-30,10,4400 W NORTH,(9.0),3.52463768115942)
+        ...
+
+  As we can see, the red light camera installed at State and 63rd Street had an usually good day on April 27th, 2012 having issued 11 tickets. On average, this camera issues 4.14 tickets per day and ten or fewer tickets on 99 out of 100 days. 
 
 #### Count the appeal results by camera
 
