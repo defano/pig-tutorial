@@ -1,7 +1,7 @@
 Chicago Coders Conference: Big Data Hands on Lab
 ================================================
 
-In this exercise, we'll be duplicating research performed by investigative reporters at the Chicago Tribune as part of their award-winning series on red light cameras in Chicago. In case you're unfamiliar with this research, the Tribune series discovered (among other things) that:
+In this exercise, we'll be duplicating research performed by investigative reporters at the Chicago Tribune as part of their award-winning series on red light cameras in Chicago. In case you're unfamiliar with this research, the Tribune series discovered that:
 
 *	Select red-light cameras seemed to go on ticket-issuing benders. All of a sudden, affected cameras began nabbing drivers at a rate sometimes in excess of 50x their historical average.
 
@@ -9,14 +9,14 @@ In this exercise, we'll be duplicating research performed by investigative repor
 
 *	Drivers that appeal red-light tickets typically win their cases 10% of the time, but tickets issued during these spikes were overturned 45% of the time. 
 
-Specifically, we'll be reproducing the data (found [in this article](http://apps.chicagotribune.com/news/local/red-light-camera-tickets/)) illustrating periods of abnormally high ticketing activity and identifying any correlation to periods of appeal success. 
+Specifically, we'll be reproducing the data found [in this article](http://apps.chicagotribune.com/news/local/red-light-camera-tickets/) illustrating periods of abnormally high ticketing activity and identifying any correlation to periods of appeal success. 
 
-The full investigavtive series [can be found here](http://www.chicagotribune.com/news/watchdog/redlight/). 
+The full investigative series [is available on the Tribune's website](http://www.chicagotribune.com/news/watchdog/redlight/). 
 
 Getting Started
 ---------------
 
-We'll be using the Hortonworks Sandbox v2.1 as our "big data" platform during this exercise. The sandbox is freely available, installs trivially, and provides a user friendly interface. IUt even has its own built-in tutorial which you can use to improve your skillset outside this course. 
+We'll be using the Hortonworks Sandbox v2.1 as our "big data" platform during this exercise. The sandbox is freely available, installs trivially, and provides a user friendly interface. It even has its own built-in tutorial which you can use to improve your skill-set outside this course. 
 
 Most host machines should have little trouble running the sandbox, but official requirements from Hortonworks state:
 
@@ -25,7 +25,7 @@ Most host machines should have little trouble running the sandbox, but official 
 * Virtualization enabled on BIOS
 * Browser: Chrome 25+, IE 9+, Safari 6+ recommended. (Sandbox will not run on IE 10)
 
-#### Install and run the Hortonworks virtual machine:
+### Install and run the Hortonworks virtual machine:
 
 1. Locate the VirtualBox software on the provided thumb drive (or download it [from the VirtualBox website](https://www.virtualbox.org/wiki/Downloads)) and install it on your Mac or PC. 
 
@@ -35,16 +35,16 @@ Most host machines should have little trouble running the sandbox, but official 
    
 4. The Hortonworks sandbox runs a custom web app called "Hue" that we'll be interacting with through the browser. As soon as the virtual machine has booted its console will display the URL at which access the application. Open a browser and navigate to that URL: [http://127.0.0.1:8888](http://127.0.0.1:8888), or, if you'd rather skip the registration process, jump directly to the Hue application at [http://localhost:8000](http://localhost:8000). (If prompted, log in with username `hue` and password `1111`.)
 
-#### A quick refresher on terminology
+### A quick refresher on terminology
 
 Recall that Pig deals with data in the form of _relations_, _bags_, _tuples_ and _fields_:
 
 * A **field** is a typed data element, like `City of Chicago` (a `chararray`), `2012` (an `int`), or `3.1415` (a `double`).
-* A **tuple** is an ordered set of fields notated with parentheses, like `(1, 2, 3)` or `(pi, 3.1415)`. Analogus to a row in a database.
-* A **bag** is an unordered collection of tuples notated with braces, like `{(a, b), (1, 2)}`. Analogus to a table in a database.
-* A **relation** is an outer bag. Given that bags can contain other bags (tuples can also contain other tuples) we call the outer-most bag the relation. Analogus to a database. 
+* A **tuple** is an ordered set of fields notated with parentheses, like `(1, 2, 3)` or `(pi, 3.1415)`. Analogous to a row in a database.
+* A **bag** is an unordered collection of tuples notated with braces, like `{(a, b), (1, 2)}`. Analogous to a table in a database.
+* A **relation** is an outer bag. Given that bags can contain other bags (tuples can also contain other tuples) we call the outer-most bag the relation. Analogous to a database. 
 
-Each collection type—bags and tuples—has a schema assocaited with it. A schema associates a type and an alias (name) with each element. Consider this example schema:
+Each collection type—bags and tuples—has a schema associated with it. A schema associates a type and an alias (name) with each element. Consider this example schema:
 
 ```
 results: {dates:tuple(start_year:int,end_year:int),ages:tuple(name:chararray,age:int)}
@@ -58,7 +58,7 @@ From left to right:
 
 You can print the schema of any alias inside a script with the command: `DESCRIBE alias;`
 
-Note that when you do so, you may find that some elements in your schema are preceeded with an an identifier and two colons, for example, `tickets::ticket_count:int`. This identifier (`tickets::`) indicates the element's namespace which is set equal to the alias from which it originated when joining or generating derived relations. Namespaces—as we'll see in the exercises—are important when differentiating between elements that otherwise have the same alias.
+Note that when you do so, you may find that some elements in your schema are preceded with an an identifier and two colons, for example, `tickets::ticket_count:int`. This identifier (`tickets::`) indicates the element's namespace which is set equal to the alias from which it originated when joining or generating derived relations. Namespaces—as we'll see in the exercises—are important when differentiating between elements that otherwise have the same alias.
 
 Importing the Ticket Data
 -------------------------
@@ -69,12 +69,10 @@ As is the case with virtually every introduction to big data, the example datase
 
 Of course, the following instructions will work equally well with the full dataset. The interested student is encouraged to repeat these exercises using the full set of red light camera data after succeeding with the 2012 subset.
 
-#### Open HCatalog
+### Import the ticket records
 We'll begin by using Apache's HCatalog to import and store our data on the platform. HCatalog provides a unified, relational view of data stored in a variety of formats like CSV or JSON. HCatalog abstracts the formatting details of the underlying data such that data analysis tools higher up the stack--like Pig, Hive or MapReduce--can operate on the data without concern for how its structured or formatted.
 
 1. On the button bar at the top of the page, click the "HCat" icon. You'll be presented with the "HCatalog: Table List" page.
-
-#### Import the ticket records
 2. Click the "Create a new table from a file" link under in the actions panel on the left. As you do this, take note of the selected database (`default`); this is the database in which our table will be created. 
 3. Name the table `rlc_all_tickets_2012` and provide a short description, something like `All red light tickets in 2012`. The table name will matter in future steps; the description will not.
 4. Click the "Choose a file" button adjacent to the input file field. In the modal dialog that appears, click the "Upload a file" button, then navigate to and choose the `all_rlc_tickets_2012.txt` file on your filesystem.
@@ -89,7 +87,7 @@ We'll begin by using Apache's HCatalog to import and store our data on the platf
   - Change the sixth column name from `1900_n_ashland_ave` to `camera_address`
 8. Click the "Create Table" button. The operation may take a few minutes to complete. When complete the page return to "HCatalog: Table List" and you'll note the presence of our newly created table, `all_rlc_tickets_2012`, in the list. Congratulations! You've just created your first HCatalog table!
 
-#### Import the appeal records
+### Import the appeal records
 
 We'll create a second table representing each ticket appeal attempt following the same steps we used for the ticket records:
 
@@ -108,7 +106,7 @@ Analyzing the Data
 
 In this tutorial, we'll be using Apache Pig to crunch our data. Pig is a scripting language that enables data scientists to analyze datasets using a reasonably simple scripting language (called, no less, *Pig Latin*) without regard to the reasonably complex, underlying map-reduce architecture. Pig compiles Pig Latin scripts into one or more map-reduce jobs that execute in the Hadoop environment. Think of map-reduce as Big Data's assembly language and Pig Latin as Big Data's C.
 
-#### Figure out which cameras generate the most revenue
+### Figure out which cameras generate the most revenue
 
 We'll start with a fairly simple task: For each camera (identified by its address), count the number of tickets issued by that camera in 2012. 
 
@@ -165,9 +163,9 @@ _**A note to the pedantic:** Clearly, each intersection has multiple cameras ins
         ordered_results = ORDER results BY revenue DESC;
         DUMP ordered_results;
 
-#### Execute your first Pig script
+### Execute your first Pig script
 
-First and foremost: Check, double-check, and triple-check your script for errors and typos. It can take Pig a few minutes to catch obvious syntax errors--having to wait several minutes to figure out you forgot a comma is painful! Worse yet, semantic errors (like referencing a non-existant field in a relation) won't be caught until the statement executes at runtime. With sizeable datasets this could be hours from now! When programming Pig, it's well worth the time investment to review your code before you run it. 
+First and foremost: Check, double-check, and triple-check your script for errors and typos. It can take Pig a few minutes to catch obvious syntax errors--having to wait several minutes to figure out you forgot a comma is painful! Worse yet, semantic errors (like referencing a nonexistent field in a relation) won't be caught until the statement executes at runtime. With sizable datasets this could be hours from now! When programming Pig, it's well worth the time investment to review your code before you run it. 
 
 When you're sure your script looks good:
 
@@ -187,7 +185,7 @@ It should be obvious that the first element in the tuple is the camera address (
 
 Congratulations on your first Pig Latin script!
 
-#### Find cameras and dates that issued an abnormally large number of tickets
+### Find cameras and dates that issued an abnormally large number of tickets
 
 Next, lets see if we can identify dates on which camera's issued an abnormally large number of tickets. For the purposes of this exercise, we're going to define _abnormally large_ as any date on which the number of tickets issued by a camera are in the 99th percentile of tickets issued (i.e., fewer than 1% of all days produce more tickets for the given camera).
 
@@ -241,7 +239,7 @@ We'll be making use of a _user defined function_, (UDF) called "DataFu" (created
         outliers = FILTER tickets_quantiles BY (ticket_count > quantile_99.($0));
         DUMP outliers;
         
-  _What's with the `$0` nonsense?_ The output of our `Quantile` method is a tuple of quantiles rather than a scalar (this is so that it can simultaniously calculate multiple quantiles at once). If we simply performed our comparison as `(ticket_count > quantile_99)` Pig would complain that it cannot compare an `int` to a touple. The `$0` notation references the first field (and in this case the only field) in the touple; a scalar `int` value.
+  _**What's with the `$0` nonsense?**_ The output of our `Quantile` method is a tuple of quantiles rather than a scalar (this is so that it can simultaneously calculate multiple quantiles at once). If we simply performed our comparison as `(ticket_count > quantile_99)` Pig would complain that it cannot compare an `int` to a tuple. The `$0` notation references the first field (and in this case the only field) in the tuple; a scalar `int` value.
 
 9. Quadruple-check your results. Your completed script should read...
 
@@ -265,7 +263,7 @@ We'll be making use of a _user defined function_, (UDF) called "DataFu" (created
 
         DUMP outliers; 
 
-10. Executing the script should produce output similar to:
+10. Executing the script should produce output similar (but not necessarily identical) to:
 
         (1 E 63RD ST,2012-04-27,11,1 E 63RD ST,(10.0),4.145985401459854)
         (4400 W NORTH,2012-06-16,10,4400 W NORTH,(9.0),3.52463768115942)
@@ -274,7 +272,11 @@ We'll be making use of a _user defined function_, (UDF) called "DataFu" (created
         ...
 
   As we can see, the red light camera installed at State and 63rd Street had an usually good day on April 27th, 2012 having issued 11 tickets. On average, this camera issues 4.14 tickets per day and ten or fewer tickets on 99 out of 100 days. 
+  
+  _**Why is my output different?**_ Your output may not start with the same four tuples shown above, but it should contain those records somewhere. This is a side effect of not ordering the `outliers` relation (like we did in the last exercise with the `ORDER ... BY` statement). As the Pig script is compiled into map-reduce jobs, Pig/Hadoop offers no gaurantees regarding the order of the outputted tuples. 
 
-#### Count the appeal results by camera
+**Extra credit:** The Chicago Tribune sometimes found that right before or right after a camera issued an abnormal number of tickets it issued very few (or zero) tickets (appearing as though the cameras were taken offline for reconfiguration). Try modifying this script to generate records where the ticket count is abnormally high or low. 
 
-#### Find cameras and dates that produced abnormal appeal success
+### Count the appeal results by camera
+
+### Find cameras and dates that produced abnormal appeal success
