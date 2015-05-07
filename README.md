@@ -1,20 +1,22 @@
 Chicago Coders Conference: Big Data Hands on Lab
 ================================================
 
-In this hands-on lab, we'll be duplicating research performed by investigative reporters at the Chicago Tribune as part of their [award-winning series on red light cameras in Chicago](http://www.chicagotribune.com/news/watchdog/redlight/). In case you're unfamiliar with this research, the Tribune series discovered that:
+In this lab we'll be duplicating research performed by investigative reporters at the Chicago Tribune as part of their [award-winning series on red light cameras in Chicago](http://www.chicagotribune.com/news/watchdog/redlight/). 
+
+In case you're unfamiliar with this research, the Tribune series discovered that:
 
 *	Select red-light cameras seemed to go on ticket-issuing benders. All of a sudden, affected cameras began nabbing drivers at a rate in excess of fifty times their historical average.
 
 *	Such spikes were often preceded and succeeded by periods of no activity, suggesting perhaps that cameras were reconfigured by the operator without mandated notice or documentation.
 
-*	Drivers that appeal red-light tickets typically win their cases 10% of the time, but tickets issued during these spikes were overturned 45% of the time. 
+*	Drivers that appeal red-light tickets usually win their cases 10% of the time, but tickets issued during these spikes were overturned 45% of the time. 
 
-Specifically, we'll be reproducing the data found [in this article](http://apps.chicagotribune.com/news/local/red-light-camera-tickets/) illustrating periods of abnormally high ticketing activity and identifying any correlation to periods of appeal success. 
+Specifically, we'll be reproducing some of the data [in this article](http://apps.chicagotribune.com/news/local/red-light-camera-tickets/) illustrating periods of abnormally high ticketing activity and identifying any correlation to periods of appeal success. 
 
 Getting Started
 ---------------
 
-We'll be using the Hortonworks Sandbox v2.1 as our "big data" platform during this exercise. The sandbox is freely available, installs trivially, and provides a user friendly interface. It even has its own built-in tutorial which you can use to improve your skill-set outside this course. 
+We'll be using the Hortonworks Sandbox (v2.1) as our "big data" platform. The sandbox is freely available, installs trivially, and provides a user friendly interface. It even has its own built-in tutorial which you can use to improve your skill-set outside this course. 
 
 Most host machines should have little trouble running the sandbox, but official requirements from Hortonworks state:
 
@@ -32,9 +34,9 @@ Recall that Pig deals with data in the form of _relations_, _bags_, _tuples_ and
 * A **bag** is an unordered collection of tuples notated with braces, like `{(a, b), (1, 2)}`. Analogous to a table in a database.
 * A **relation** is an outer bag. Given that bags can contain other bags (tuples can also contain other tuples) we call the outer-most bag the relation. Analogous to a database... sort of. 
 
-These relational database analogies fall apart quickly because, unlike a relational database, Pig supports bags inside of bags, the equivalent of embedding a table--or an entire database of tables--in a single field. 
+When discussing Pig, relational database analogies fall apart quickly because unlike a relational database, Pig supports bags inside of bags, the analog of embedding a table--or even an entire database of tables--inside a single field. 
 
-Each collection type has a schema associated with it. A schema binds a type and an alias (a name) to each element. Consider this example schema:
+Like relational databases, each collection type has a schema associated with it. A schema binds a type and an alias (a name) to each element. Consider this example schema:
 
 ```
 results: {dates:tuple(start_year:int,end_year:int),ages:tuple(name:chararray,age:int)}
@@ -42,12 +44,12 @@ results: {dates:tuple(start_year:int,end_year:int),ages:tuple(name:chararray,age
 
 From left to right:
 
-* `results` is the alias (the name) of the relation
+* `results` is the name of the relation (called its _alais_ in Pig terminology)
 * `dates:tuple(...)` indicates that the relation contains a tuple called `dates`
 * `(start_year:int, end_year:int)` denotes that the `dates` tuple contains two integers, called `start_year` and `end_year` respectively. 
 * `ages:tuple(name:chararray,age:int)` indicates the relation also contains a second tuple called `ages` comprised of a string (`chararray`) called `name` and an integer called `age`.
 
-Note that you may find some elements in your schema are preceded with an an identifier and two colons, for example, `tickets::ticket_count:int`. This identifier (`tickets::`) indicates the element's namespace which is set equal to the alias from which it originated when joining or generating derived relations. Namespaces--as we'll see in the exercises--are important when differentiating between elements that would otherwise have the same alias.
+You may sometimes find elements in your schema preceded with an an identifier and two colons, for example  `tickets::ticket_count:int`. This identifier (`tickets::`) specifies the element's namespace. Namespaces are derived from the alias from which the element originated when joining or generating the relation. Namespaces are an important consideration when differentiating between elements that would otherwise have the same alias.
 
 You can print the schema of any alias inside a script with the command: `DESCRIBE alias;` or better yet, let Pig diagram the table (in ASCII art) for you using the `ILLUSTRATE alias;` command. As I'm working on a script I often find it helpful to `DESCRIBE` each alias as I create it. This makes it easy to see how Pig has identified elements in a relation, especially when `JOIN` operations produce complex, namespaced schema aliases. 
 
@@ -201,7 +203,7 @@ When you're sure your script looks good:
   - For a more detailed view of whats going on, open the "Job Browser" (the construction hard-hat icon) in a new tab. You'll note that by executing your script, a "TempletonControllerJob" has started on the platform. This controller job manages your script execution and is responsible for starting the child map-reduce jobs resulting from operations specified in your script.
   - If you close the script editor window or wish to see results from previously executed jobs, click the "Query History" link at the top of the Pig page. 
 
-3. Your script will probably take 2-5 minutes to execute depending on your machine's horsepower. Provided your script executed successfully, the output (which will appear below the script editor field) should be:
+3. Your script will probably take two and five minutes to execute depending on your machine's horsepower. Provided your script executed successfully, the output (which will appear below the script editor field) should be:
 
         (4200 S CICERO AVENUE,19800,1980000)
         (400 W BELMONT AVE,15076,1507600)
