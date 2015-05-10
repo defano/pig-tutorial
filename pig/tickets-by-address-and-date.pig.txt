@@ -1,6 +1,0 @@
-tickets = LOAD 'default.all_rlc_tickets_2012' USING org.apache.hcatalog.pig.HCatLoader();
-
-results = FOREACH (GROUP tickets BY (camera_address, date)) GENERATE 
-	group as camera_address_date, COUNT(tickets) as ticket_count;
-  
-DUMP results;
