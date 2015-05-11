@@ -1,5 +1,8 @@
 Chicago Coders Conference: Big Data Hands on Lab
 ================================================
+_Source for all printed materials is available on GitHub at http://github.com/defano/ccc-big-data._
+
+---------
 
 In this lab we'll be duplicating research performed by investigative reporters at the Chicago Tribune as part of their [award-winning series on red light cameras in Chicago](http://www.chicagotribune.com/news/watchdog/redlight/). 
 
