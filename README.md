@@ -8,11 +8,11 @@ In this lab we'll be duplicating research performed by investigative reporters a
 
 In case you're unfamiliar with this research, the Tribune series discovered that:
 
-*	Select red-light cameras seemed to go on ticket-issuing benders. All of a sudden, affected cameras began nabbing drivers at a rate in excess of fifty times their historical average.
+*	Select red light cameras seemed to go on ticket-issuing benders. All of a sudden, affected cameras began nabbing drivers at a rate in excess of fifty times their historical average.
 
 *	Such spikes were often preceded and succeeded by periods of no activity, suggesting perhaps that cameras were reconfigured by the operator without mandated notice or documentation.
 
-*	Drivers that appeal red-light tickets usually win their cases 10% of the time, but tickets issued during these spikes were overturned 45% of the time. 
+*	Drivers that appeal red light tickets usually win their cases 10% of the time, but tickets issued during these spikes were overturned 45% of the time. 
 
 Specifically, we'll be reproducing some of the data [in this article](http://apps.chicagotribune.com/news/local/red-light-camera-tickets/) illustrating periods of abnormally high ticketing activity and identifying any correlation to periods of appeal success. 
 
@@ -54,7 +54,7 @@ From left to right:
 
 You may sometimes find elements in your schema preceded with an an identifier and two colons, for example  `tickets::ticket_count:int`. This identifier (`tickets::`) specifies the element's namespace. Namespaces are derived from the alias from which the element originated when joining or generating the relation. Namespaces are an important consideration when differentiating between elements that would otherwise have the same alias.
 
-You can print the schema of any alias inside a script with the command: `DESCRIBE alias;` or better yet, let Pig diagram the table (in ASCII art) for you using the `ILLUSTRATE alias;` command. As I'm working on a script I often find it helpful to `DESCRIBE` each alias as I create it. This makes it easy to see how Pig has identified elements in a relation, especially when `JOIN` operations produce complex, namespaced schema aliases. 
+You can print the schema of any alias inside a script with the command: `DESCRIBE alias;` or better yet, let Pig diagram the table and data flow in ASCII art for you by using the `ILLUSTRATE alias;` command. As I'm working on a script I often find it helpful to `DESCRIBE` each alias as I create it. This makes it easy to see how Pig has identified elements in a relation, especially when `JOIN` operations produce complex, namespaced schema aliases. 
 
 ### Part 1: Install and run the Hortonworks virtual machine:
 
