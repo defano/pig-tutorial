@@ -85,7 +85,7 @@ We'll begin by using Apache's HCatalog to import and store our data on the platf
 
 2. Click the "Create a new table from a file" link under in the actions panel on the left. As you do this, take note of the selected database (`default`); this is the database in which our table will be created. 
 
-3. Name the table `rlc_all_tickets_2012` and provide a short description, something like `All red light tickets in 2012`. The table name will matter in future steps; the description will not.
+3. Name the table `all_rlc_tickets_2012` and provide a short description, something like `All red light tickets in 2012`. The table name will matter in future steps; the description will not.
 
 4. Click the "Choose a file" button adjacent to the input file field. In the modal dialog that appears, click the "Upload a file" button, then navigate to and choose the `all_rlc_tickets_2012.txt` file on your filesystem.
 
