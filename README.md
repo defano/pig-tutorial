@@ -1,5 +1,4 @@
 # Pig Tutorial
-*Supplemental materials for the "Big Data Hands-On Lab" presented at the Chicago Coders Conference in 2015.*
 
 Introduction
 ------------
